@@ -5,6 +5,11 @@ rule all:
     input:
         "combined_outputs.txt"
 
+rule compile_cpp:
+    input: "src/cpp/peak_rp.cpp"
+    output: "src/cpp/peak_rp"
+    shell: "g++ -o {output} {input} -O3 -std=c++17 -pthread"
+
 rule download_TR_target_sets:
     output:
         temp("data/target_sets/{distance}k/{tr}.tsv")
@@ -31,12 +36,14 @@ rule compile_TR_target_sets:
 
 rule calculate_H3K27ac_RP:
     input:
-        "H3K27ac_data.txt"
+        "inputs/{context}.bed"
     output:
-        "H3K27ac_RP.txt"
+        "data/{context}/H3K27ac_RP.csv"
+    params:
+        refseq_genes="assets/hg19_refseq.tsv"
     shell:
         """
-        # your code to calculate H3K27ac RP goes here
+        src/cpp/peak_rp {input} {output} {params.refseq_genes}
         """
 
 rule preprocess_TR_data:
