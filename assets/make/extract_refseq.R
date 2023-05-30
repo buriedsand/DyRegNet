@@ -57,5 +57,5 @@ names(df) <- c("chr", "tss", "refseq_id", "gene_symbol")
 head(df)
 
 # Write DataFrame to CSV file
-write.csv(df, file = "assets/hg19_refseq.csv", row.names = FALSE)
+write.csv(df, file = "assets/make/hg19_refseq.csv", row.names = FALSE)
 

@@ -3,7 +3,12 @@ with open("assets/tr_options.txt", "r") as f:
 
 rule all:
     input:
-        "combined_outputs.txt"
+        UGRN5="data/unweighted_network/5k/ugrn.csv",
+        M_H3K27ac_RP="data/M/H3K27ac_RP.csv",
+        M_TR_RP="data/M/TR_RP.csv",
+        L_H3K27ac_RP="data/L/H3K27ac_RP.csv",
+        L_TR_RP="data/L/TR_RP.csv"
+
 
 rule compile_cpp:
     input: "src/cpp/peak_rp.cpp"
@@ -26,7 +31,7 @@ rule compile_TR_target_sets:
     input:
         lambda wildcards: expand(f"data/target_sets/{wildcards.distance}k/{{tr}}.tsv", tr=TR_LIST)
     output:
-        "data/unweighted_network/{distance}k/ugrn.csv"
+        protected("data/unweighted_network/{distance}k/ugrn.csv")
     log: 
         "logs/compile_TR_target_sets/{distance}k.log"
     shell:
@@ -36,53 +41,94 @@ rule compile_TR_target_sets:
 
 rule calculate_H3K27ac_RP:
     input:
-        "inputs/{context}.bed"
+        signal="inputs/{context}.bed",
+        peak_rp="src/cpp/peak_rp"
     output:
         "data/{context}/H3K27ac_RP.csv"
     params:
         refseq_genes="assets/hg19_refseq.tsv"
     shell:
         """
-        src/cpp/peak_rp {input} {output} {params.refseq_genes}
+        {input.peak_rp} {input.signal} {output} {params.refseq_genes}
+        """
+
+rule download_TR_data:
+    output:
+        temp("data/raw_TR_data/{tr}.bed")
+    params:
+        url="https://chip-atlas.dbcls.jp/data/hg19/assembled/Oth.ALL.50.{tr}.AllCell.bed"
+    log:
+        "logs/download_TR_data/{tr}.log"
+    shell:
+        """
+        wget -O {output} {params.url} 2> {log} || echo "Failed to download {params.url}" >> {log}
         """
 
 rule preprocess_TR_data:
+    input:
+        "data/raw_TR_data/{tr}.bed"
     output:
-        "preprocessed_TR_data.txt"
+        protected("data/TR_data/{tr}.bed")
+    params:
+        blacklist_file="assets/blacklists/ENCFF001TDO.bed"
+    log: 
+        "logs/preprocess_ChIP_data/{tr}.log"
     shell:
         """
-        # your code to download and preprocess TR data goes here
+        bedtools intersect -v -wa \
+            -a {input} \
+            -b {params.blacklist_file} \
+            -sorted > {output}
         """
 
 rule intersect_TR_H3K27ac:
     input:
-        "H3K27ac_data.txt",
-        "preprocessed_TR_data.txt"
+        preprocessed_TR_data="data/TR_data/{tr}.bed"
     output:
-        "intersected_data.txt"
+        temp("data/{context}/intersected_data/{tr}.bed")
+    params:
+        h3K27ac_data="inputs/{context}.bed"
+    log: 
+        "logs/intersect_TR_H3K27ac/{context}/{tr}.log"
     shell:
         """
-        # your code to intersect TR data with H3K27ac data goes here
+        bedtools intersect -wa \
+            -a {input.preprocessed_TR_data} \
+            -b {params.h3K27ac_data} \
+            -sorted > {output}
+        """
+
+rule binarize_chipseq_binding:
+    input:
+        "data/{context}/intersected_data/{tr}.bed"
+    output:
+        temp("data/{context}/binarized_data/{tr}.bed")
+    shell:
+        """
+        awk 'BEGIN {{FS=OFS=\"\t\"}} !seen[$1, $2, $3]++ {{print $1, $2, $3, 1}}' {input} > {output}
         """
 
 rule calculate_TR_RP:
     input:
-        "intersected_data.txt"
+        signal="data/{context}/binarized_data/{tr}.bed",
+        peak_rp="src/cpp/peak_rp"
     output:
-        "TR_RP.txt"
+        temp("data/{context}/TR_RP/{tr}.csv")
+    params:
+        refseq_genes="assets/hg19_refseq.tsv"
     shell:
         """
-        # your code to calculate TR RP goes here
+        {input.peak_rp} {input.signal} {output} {params.refseq_genes}
         """
 
 rule aggregate_TR_RPs:
     input:
-        "TR_RP.txt"
+        lambda wildcards: expand(f"data/{wildcards.context}/TR_RP/{{tr}}.csv", tr=TR_LIST)
     output:
-        "aggregate_TR_RPs.txt"
+        "data/{context}/TR_RP.csv"
     shell:
         """
-        # your code to aggregate TR RPs goes here
+        python src/python/aggregate_TR_RPs.py {input} {output}
         """
 
 rule combine_outputs:

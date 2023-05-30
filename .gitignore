@@ -4,3 +4,4 @@ data/
 logs/
 inputs/
 *peak_rp
+*.DS_Store
