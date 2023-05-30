@@ -3,11 +3,8 @@ with open("assets/tr_options.txt", "r") as f:
 
 rule all:
     input:
-        UGRN5="data/unweighted_network/5k/ugrn.csv",
-        M_H3K27ac_RP="data/M/H3K27ac_RP.csv",
-        M_TR_RP="data/M/TR_RP.csv",
-        L_H3K27ac_RP="data/L/H3K27ac_RP.csv",
-        L_TR_RP="data/L/TR_RP.csv"
+        "data/weighted_network/5k/M.csv",
+        "data/weighted_network/5k/L.csv"
 
 
 rule compile_cpp:
@@ -133,12 +130,16 @@ rule aggregate_TR_RPs:
 
 rule combine_outputs:
     input:
-        "TR_target_sets.txt",
-        "H3K27ac_RP.txt",
-        "aggregate_TR_RPs.txt"
+        ugrn="data/unweighted_network/{distance}k/ugrn.csv",
+        H3K27ac_RP="data/{context}/H3K27ac_RP.csv",
+        TR_RP="data/{context}/TR_RP.csv"
     output:
-        "combined_outputs.txt"
+        "data/weighted_network/{distance}k/{context}.csv"
     shell:
         """
-        # your code to combine outputs from step 1, 2, and 4 goes here
+        python src/python/combine_outputs.py \
+            {input.ugrn} \
+            {input.H3K27ac_RP} \
+            {input.TR_RP} \
+            {output}
         """
