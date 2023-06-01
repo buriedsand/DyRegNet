@@ -1,7 +1,12 @@
 import sys
 
-input_files = sys.argv[1:-1]
-output_file = sys.argv[-1]
+input_files = sys.argv[1:-2]
+output_file = sys.argv[-2]
+refseq_file = sys.argv[-1]
+
+# List of transcription regulators (TR) options
+with open(refseq_file, "r") as f:
+    gene_list = {line.split("\t", 1)[0].split(":", 1)[1] for line in f}
 
 try:
     with open(output_file, "w") as output:
@@ -18,7 +23,7 @@ try:
                         continue
                     for line in f:
                         target_gene = line.strip().split("\t")[0]
-                        if target_gene:
+                        if target_gene and (target_gene in gene_list):
                             output.write(f"{tr_name},{target_gene}\n")
             except FileNotFoundError:
                 print(f"File not found: {input_file}")

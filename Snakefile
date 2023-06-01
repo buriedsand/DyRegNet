@@ -29,8 +29,9 @@ rule download_target_sets:
 rule compile_target_sets:
     input: expand("data/target_sets/{tr}.tsv", tr=TR_LIST)
     output: protected("data/unweighted_network/ugrn.csv")
+    params: refseq_genes="assets/hg19_refseq.tsv"
     log: "logs/compile_target_sets.log"
-    shell: "python src/python/compile_target_sets.py {input} {output} > {log} 2>&1"
+    shell: "python src/python/compile_target_sets.py {input} {output} {params.refseq_genes} > {log} 2>&1"
 
 # Rule for calculating H3K27ac RP
 rule calculate_H3K27ac_RP:
