@@ -25,7 +25,8 @@ H3K27ac_RP_normalized_repeated = pd.concat(
 H3K27ac_RP_normalized_repeated.columns = TR_RP_normalized.columns
 
 # Perform element-wise multiplication
-result = TR_RP_normalized.multiply(H3K27ac_RP_normalized_repeated)
+# result = TR_RP_normalized.multiply(H3K27ac_RP_normalized_repeated)
+result = TR_RP  # Ignore normalization and H3K27ac_RP for now
 
 # Prepare data for grouping
 result.reset_index(inplace=True)
