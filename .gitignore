@@ -6,3 +6,4 @@ inputs/
 *peak_rp
 *.DS_Store
 .DS_Store
+inference/
