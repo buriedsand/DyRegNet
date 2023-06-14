@@ -10,9 +10,13 @@
 // Import necessary libraries for handling CSV files
 #include "csv.h" // Use a CSV parsing library, e.g., https://github.com/ben-strasser/fast-cpp-csv-parser
 
-const int L = 5000; // 100000;
-const int delta = 500; // 10000;
-const double mu = -std::log(static_cast<double>(L) / (3 * delta));
+// Constants for calculation, adjust as needed
+const int L = 5000;
+const int delta = 2500;
+
+// Compute mu based on the formula: mu = L * log(3) / delta
+const double mu = static_cast<double>(L) * std::log(3) / static_cast<double>(delta);
+
 
 double calculate_single_gene_rp(const std::vector<std::tuple<int, int, double>> &sample_values, int t_k) {
     double R_jk = 0;
